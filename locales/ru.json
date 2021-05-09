@@ -1,0 +1,33 @@
+{
+  "types": {
+    "PLOWING": "Вспашка",
+    "BOWLING": "Боронование",
+    "FERTILIZATION": "Внесение удобрений",
+    "WATERING": "Полив",
+    "RIGGING": "Прикатывание",
+    "HARVESTING": "Сбор урожая",
+    "EXCELLENT": "Отлично",
+    "SATISFACTORILY": "Удовлетворительно",
+    "BADLY": "Плохо"
+  },
+  "titles": {
+    "date": "Дата",
+    "type": "Операция",
+    "area": "Площадь",
+    "assessment": "Качество"
+  },
+  "assessment": {
+    "EXCELLENT": "Отлично",
+    "SATISFACTORILY": "Удовлетворительно",
+    "BADLY":  "Плохо",
+    "NO_DATA": "Нет оценки"
+  },
+  "assessmentShort": {
+    "EXCELLENT": "Отлично",
+    "SATISFACTORILY": "Удовл.",
+    "BADLY":  "Плохо"
+  },
+  "sidebar": {
+    "apply": "ДОБАВИТЬ ОПЕРАЦИЮ"
+  }
+}

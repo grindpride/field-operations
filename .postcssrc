@@ -1,0 +1,9 @@
+{
+  "plugins": {
+    "postcss-nested": true,
+    "postcss-preset-env": {
+        stage: 3,
+        browsers: '> 1%'
+    }
+  }
+}
