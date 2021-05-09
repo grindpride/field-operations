@@ -1,4 +1,10 @@
 <template lang="pug">
+.table-control
+  Tabs(:items="tabs" v-model:value="isPlannedVisible")
+  .flexspace
+  Button.icon-btn(@click="open(null)")
+    include ../../src/assets/plus.svg
+    | {{$t('page.addOperation')}}
 table.table
   thead.table-head
     tr.table-row
@@ -10,12 +16,12 @@ table.table
       ) {{ $t(`titles.${column}`) }}
 
   tbody.table-body
-    tr.table-row(v-for='row in data' :key='data.id')
+    tr.table-row(v-for='row in preparedData' :key='preparedData.id' @click="open(row)")
       td.table-cell(
         v-for='column of columns'
-        :key='`${column}_${data.id}`'
+        :key='`${column}_${preparedData.id}`'
       )
-        AssessmentBadge(
+        StatusBadge(
           v-if="column === 'assessment'"
           :level="row[column]"
         )
@@ -34,64 +40,102 @@ table.table
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
+import {
+  computed, defineComponent, PropType, ref,
+} from 'vue';
 import Operation, { OperationType } from '@/models/Operation';
+import StatusBadge from '@/components/atoms/StatusBadge.vue';
+import { getJsDate, getPrettyDateString } from '@/utils/dates.js';
+import { useI18n } from 'vue-i18n';
 import TDate from '@/models/TDate';
-import AssessmentBadge from '@/components/AssessmentBadge.vue';
+import Tabs from '@/components/atoms/Tabs.vue';
+import Button from '@/components/atoms/Button.vue';
 
 const COLUMNS = ['date', 'type', 'area', 'assessment'] as (keyof Operation)[];
 type ColumnFieldTitle = typeof COLUMNS[number];
 
-export const getJsDate = ({
-  year,
-  month,
-  day,
-}:TDate):Date => new Date(year, month, day);
-
 export default defineComponent({
   name: 'OperationTable',
-  emits: ['sort'],
+  emits: ['open', 'edit'],
   props: {
     data: {
       type: Array as PropType<Operation[]>,
       default: () => [],
     },
   },
-  components: { AssessmentBadge },
+  components: {
+    Tabs,
+    Button,
+    StatusBadge,
+  },
   setup(props, { emit }) {
+    const { t } = useI18n();
     const columns = COLUMNS;
+    const getOperationType = (field: OperationType): string => OperationType[field];
+
     const isDescSort = ref(true);
+    const isPlannedVisible = ref(true);
     const lastSortField = ref<null | ColumnFieldTitle>(null);
 
-    const getPrettyDateString = (date: TDate) => {
-      const jsDate = getJsDate(date);
-      const month = jsDate
-        .toLocaleString('ru', { month: 'short' })
-        .split('.')[0]
-        .toUpperCase();
-      const day = jsDate.getDay();
-      const year = jsDate.getFullYear();
-      return `${day} ${month} ${year}`;
-    };
+    const preparedData = computed(() => {
+      const sortedData = props
+        .data;
+      if (lastSortField.value) {
+        sortedData.sort((one, two) => {
+          const value1 = one[lastSortField.value as keyof Operation] ?? -1;
+          const value2 = two[lastSortField.value as keyof Operation] ?? -1;
+          const sortDirection = isDescSort.value ? -1 : 1;
 
-    const getOperationType = (field: OperationType): string => OperationType[field];
+          if (lastSortField.value === 'date') {
+            return (getJsDate(value1 as TDate) > getJsDate(value2 as TDate)
+              ? -1
+              : 1) * sortDirection;
+          }
+          return (value1 > value2 ? -1 : 1) * sortDirection;
+        });
+      }
+
+      return sortedData
+        .filter(({ date }) => {
+          const bool = getJsDate(date) > new Date();
+          return isPlannedVisible.value ? bool : !bool;
+        });
+    });
+    const tabs = computed(() => ([
+      {
+        label: t('tabs.planned'),
+        value: true,
+      },
+      {
+        label: t('tabs.completed'),
+        value: false,
+      },
+    ]));
 
     const sortTable = (field: ColumnFieldTitle) => {
       if (lastSortField.value !== field) {
-        isDescSort.value = true;
+        isDescSort.value = false;
+      } else {
+        isDescSort.value = !isDescSort.value;
       }
-      emit('sort', field, isDescSort.value);
-      isDescSort.value = !isDescSort.value;
       lastSortField.value = field;
     };
 
+    const open = (operation: Operation | null) => {
+      emit('open', operation);
+    };
+
     return {
+      getPrettyDateString,
+      isPlannedVisible,
+      tabs,
       isDescSort,
       lastSortField,
       columns,
       sortTable,
-      getPrettyDateString,
+      preparedData,
       getOperationType,
+      open,
     };
   },
 });
@@ -117,6 +161,7 @@ export default defineComponent({
 .table-body {
   .table-row {
     height: 50px;
+    cursor: pointer;
   }
 
   border-bottom: 1px solid var(--gray);
@@ -187,5 +232,10 @@ export default defineComponent({
   &:hover {
     background-color: var(--light-gray);
   }
+}
+
+.table-control {
+  display: flex;
+  margin-bottom: 16px;
 }
 </style>

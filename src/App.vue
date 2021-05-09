@@ -2,62 +2,37 @@
 header.header
 section.page__wrapper
   .page
-    h1.page__title Операции на поле 112
-    .page__control
-      .tabs
-        button.tabs__item Запланированные операции
-        button.tabs__item.active Выполненные операции
-      .flexspace
-      button.icon-btn(@click="isModalOpen = true")
-        include ../src/assets/plus.svg
-        | Добавить операцию
+    h1.page__title {{$t('page.title', {field: 112})}}
     OperationTable.operarions-table(
       v-if="tableData.length"
       :data='tableData'
-      @sort="sortTable"
+      @open="openModal"
       )
-Sidebar(:isOpen="isModalOpen" @close="isModalOpen = false" @add="addOperation")
+OperationSidebar(
+  v-if="isModalOpen"
+  :operation="activeOperation"
+  @close="closeModal"
+  @add="addOperation"
+)
 
 </template>
 
 <script lang="ts">
-import {
-  computed, defineComponent, ref, onMounted,
-} from 'vue';
-import OperationTable, { getJsDate } from '@/components/table/OperationTable.vue';
-import Sidebar from '@/components/sidebar/Sidebar.vue';
+import { defineComponent, ref, onMounted } from 'vue';
+import OperationTable from '@/components/OperationTable.vue';
+import OperationSidebar from '@/components/OperationSidebar.vue';
 import FieldService from '@/FieldService';
 import Operation from '@/models/Operation';
-import TDate from '@/models/TDate';
+import Button from '@/components/atoms/Button.vue';
 
 const fieldService = new FieldService();
 
 export default defineComponent({
-  components: { OperationTable, Sidebar },
+  components: { OperationTable, OperationSidebar, Button },
   setup() {
     const tableData = ref<Operation[]>([]);
     const isModalOpen = ref(false);
-
-    onMounted(async () => {
-      tableData.value = await fieldService.getOperations();
-    });
-
-    const sortTable = (field: keyof Operation, direction:boolean) => {
-      tableData
-        .value
-        .sort((one, two) => {
-          const value1 = one[field] ?? -1;
-          const value2 = two[field] ?? -1;
-          const sortDirection = direction ? 1 : -1;
-
-          if (field === 'date') {
-            return (getJsDate(value1 as TDate) > getJsDate(value2 as TDate)
-              ? -1
-              : 1) * sortDirection;
-          }
-          return (value1 > value2 ? -1 : 1) * sortDirection;
-        });
-    };
+    const activeOperation = ref<null | Operation >(null);
 
     const addOperation = async (data:Operation) => {
       isModalOpen.value = false;
@@ -65,8 +40,23 @@ export default defineComponent({
       tableData.value = await fieldService.getOperations();
     };
 
+    const closeModal = () => {
+      activeOperation.value = null;
+      isModalOpen.value = false;
+    };
+    const openModal = (operation: Operation | null) => {
+      activeOperation.value = operation;
+      isModalOpen.value = true;
+    };
+
+    onMounted(async () => {
+      tableData.value = await fieldService.getOperations();
+    });
+
     return {
-      sortTable,
+      openModal,
+      closeModal,
+      activeOperation,
       isModalOpen,
       tableData,
       addOperation,
@@ -87,6 +77,7 @@ export default defineComponent({
   background-color: var(--dark);
   z-index: 1;
 }
+
 .page{
   margin: 0 auto;
   max-width: 870px;
@@ -107,46 +98,6 @@ export default defineComponent({
     letter-spacing: -0.8px;
     margin-bottom: 25px;
   }
-
-  &__control{
-    display: flex;
-    margin-bottom: 16px;
-  }
 }
 
-.tabs{
-  &__item{
-    font-weight: 500;
-    font-size: 11px;
-    line-height: 13px;
-    text-transform: uppercase;
-
-    &:not(:last-of-type){
-      margin-right: 18px;
-    }
-
-    &.active{
-      color: var(--blue);
-    }
-  }
-}
-
-.icon-btn{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 40px;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 0 15px;
-  border-radius: 20px;
-  transition: all 0.2s ease;
-
-  svg{
-    margin-right: 7px;
-  }
-
-  &:hover{
-    background-color: var(--light-gray);
-  }
-}
 </style>

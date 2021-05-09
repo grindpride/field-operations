@@ -1,56 +1,50 @@
 <template lang="pug">
-.button-group
-  button.button-group__item(
-    v-for='(item, i) of items'
-    @click='onItemClick(item)'
-    :class="{[item.activeColor]:true, active: item.value === activeItem}"
-    :key='item.label'
-  ) {{ item.label }}
+button.button(
+  @click="emit('click')"
+  :class="{[activeColor]: true, active}"
+)
+  slot
 </template>
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 
-export interface GroupItem<T> {
-  label: string;
-  activeColor: 'green' | 'yellow' | 'red',
-  value: T
+export enum ButtonActiveColor {
+  RED = 'red',
+  YELLOW = 'yellow',
+  GREEN = 'green'
 }
 
 export default defineComponent({
-  name: 'ButtonGroup',
-  emits: ['update:activeItem'],
+  name: 'Button',
+  emits: ['click'],
   props: {
-    activeItem: {
+    activeColor: {
+      type: String as PropType<ButtonActiveColor>,
       default: null,
     },
-    items: {
-      type: Array as PropType<GroupItem<unknown>[]>,
-      default: () => [],
+    active: {
+      type: Boolean,
+      default: false,
+    },
+    label: {
+      type: String,
+      default: '',
     },
   },
   setup(props, { emit }) {
-    const onItemClick = (item: GroupItem<unknown>) => {
-      emit('update:activeItem', props.activeItem === item.value ? null : item.value);
-    };
-
     return {
-      onItemClick,
+      emit,
     };
   },
 });
 </script>
 
 <style scoped>
-.button-group {
-  overflow: hidden;
-  border-radius: 20px;
-  display: inline-flex;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-
-  &__item {
+.button{
     height: 40px;
-    width: 94px;
-    display: flex;
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-gap: 7px;
     align-items: center;
     justify-content: center;
     background-color: var(--light-gray);
@@ -59,7 +53,17 @@ export default defineComponent({
     font-weight: 500;
     font-size: 11px;
     line-height: 13px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0 15px;
+    border-radius: 20px;
 
+  svg {
+    margin-right: 7px;
+  }
+
+  &:hover{
+    background-color: var(--light-gray);
+  }
     &:not(:last-of-type){
       border-right: 1px solid var(--gray);
     }
@@ -82,7 +86,6 @@ export default defineComponent({
         background-color: var(--red);
       }
     }
-  }
 }
 
 </style>

@@ -50,6 +50,22 @@ export default class FieldService {
         comment: null,
         assessment: null,
       }),
+      new Operation({
+        id: 'f112-o6',
+        type: OperationType.HARVESTING,
+        date: { year: 2021, month: 10, day: 20 },
+        area: 48.0,
+        comment: 'Нужно обязательно собрать пшеницу',
+        assessment: null,
+      }),
+      new Operation({
+        id: 'f112-o6',
+        type: OperationType.WATERING,
+        date: { year: 2021, month: 12, day: 22 },
+        area: 48.0,
+        comment: 'Поливаем ага, в декабре',
+        assessment: null,
+      }),
     ];
 
     /**

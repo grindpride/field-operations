@@ -1,78 +1,74 @@
 <template lang="pug">
-aside.sidebar(v-if="isOpen")
-  button.sidebar__close(@click="onClose")
-    include ../../../src/assets/close.svg
+aside.sidebar
+  button.sidebar__close(@click="close")
+    include ../assets/close.svg
   .sidebar__body
-    h2.sidebar__title Добавление операции
+    h2.sidebar__title {{$t('sidebar.addTitle')}}
     .field-info
       .field-info__data
         .field-info__square
-          include ../../../src/assets/field.svg
-        .field-info__title ПОЛЕ
+          include ../assets/field.svg
+        .field-info__title {{$t('sidebar.field')}}
         .field-info__number 112
       .field-info__culture
         .field-info__culture-type Озимая пшеница
         .field-info__culture-name ПОБЕДА 50
         .field-info__culture-icon
-          include ../../../src/assets/wheat.svg
+          include ../assets/wheat.svg
     .field-control
       .field-control__operation
         Select(
           :options="operations"
-          v-model:active='selectedOperation'
-          label="ОПЕРАЦИЯ"
-          placeholder="Выберите"
+          v-model:value='type'
+          :label="$t('sidebar.operations')"
         )
       .field-control__date
-        .field-control__date-label ДАТА ПРОВЕДЕНИЯ
+        .field-control__date-label {{$t('sidebar.date')}}
         .field-control__date-picker
           Datepicker(v-model="date")
-          .field-control__date-picker-placeholder(v-if="!date")  Выберите
         .field-control__date-icon
-          include ../../../src/assets/calendar.svg
+          include ../assets/calendar.svg
       .field-control__area
-        .field-control__area-label КОЛ-ВО ГА К ОБРАБОТКЕ
-        input.field-control__area-input(type="number" placeholder="Задайте" v-model="area")
+        .field-control__area-label {{$t('sidebar.area')}}
+        input.field-control__area-input(
+          type="number"
+          :placeholder="$t('sidebar.areaPlaceholder')"
+          v-model="area"
+        )
     .field-comment
-      textarea(placeholder="Комментарий к операции")
+      textarea(
+        :placeholder="$t('sidebar.commentPlaceholder')"
+        v-model="comment"
+        )
     .field-assessment
-      .field-assessment__label Качество выполнения операции
-      ButtonGroup(:items="assesmentBtns" v-model:activeItem='assasment')
+      .field-assessment__label {{$t('sidebar.assessment')}}
+      ButtonGroup(:items="assesmentBtns" v-model:activeItem='assessment')
     .flexspace
-    button.apply-btn(@click="onAdd") {{$t('sidebar.apply')}}
+    button.apply-btn(@click="add") {{$t('sidebar.apply')}}
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from 'vue';
-import ButtonGroup from '@/components/ButtonGroup.vue';
+import {
+  computed, defineComponent, PropType, ref, onMounted,
+} from 'vue';
+import ButtonGroup from '@/components/atoms/ButtonGroup.vue';
 import { useI18n } from 'vue-i18n';
-import { Assessment, OperationType } from '@/models/Operation';
-import Select, { SelectOption } from '@/components/Select.vue';
+import Operation, { Assessment, OperationType } from '@/models/Operation';
+import Select from '@/components/atoms/Select.vue';
 import Datepicker from 'vue3-datepicker';
+import { ButtonActiveColor } from '@/components/atoms/Button.vue';
+import getEnumKeys from '@/utils/object';
+import { getJsDate } from '@/utils/dates.js';
 
 type AssesmentType = keyof typeof Assessment;
-type OperationTypeKey = keyof typeof OperationType;
-
-const ASSESSMENTS = ['EXCELLENT',
-  'SATISFACTORILY',
-  'BADLY'] as AssesmentType[];
-
-const OPERATIONS = [
-  'PLOWING',
-  'BOWLING',
-  'FERTILIZATION',
-  'WATERING',
-  'RIGGING',
-  'HARVESTING',
-] as OperationTypeKey[];
 
 export default defineComponent({
-  name: 'Sidebar',
+  name: 'OperationSidebar',
   emits: ['close', 'add'],
   props: {
-    isOpen: {
-      type: Boolean,
-      default: false,
+    operation: {
+      type: Object as PropType<Operation>,
+      default: null,
     },
   },
   components: {
@@ -82,58 +78,71 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const { t } = useI18n();
-    const date = ref(new Date());
-    const onClose = () => {
-      emit('close');
-    };
-
-    const colorMap: Record<AssesmentType, 'red' | 'green' | 'yellow'> = {
-      EXCELLENT: 'green',
-      SATISFACTORILY: 'yellow',
-      BADLY: 'red',
+    const colorMap: Record<AssesmentType, ButtonActiveColor> = {
+      EXCELLENT: ButtonActiveColor.GREEN,
+      SATISFACTORILY: ButtonActiveColor.YELLOW,
+      BADLY: ButtonActiveColor.RED,
     } as const;
 
-    const assasment = ref<number | null>(null);
+    const date = ref(new Date());
+    const assessment = ref<Assessment | null | undefined>(null);
     const area = ref<number | null>(null);
-    const comment = ref<string | null>(null);
-    const operations = computed(() => OPERATIONS.map((a) => ({
+    const comment = ref<string | null | undefined>(null);
+    const type = ref<OperationType>(0);
+
+    const operations = computed(() => getEnumKeys(OperationType).map((a) => ({
       label: t(`types.${a}`),
       value: OperationType[a],
     })));
 
-    const selectedOperation = ref<SelectOption | null>(operations.value[0]);
-    const assesmentBtns = computed(() => ASSESSMENTS.map((a) => ({
+    const assesmentBtns = computed(() => getEnumKeys(Assessment).map((a) => ({
       label: t(`assessmentShort.${a}`),
       value: Assessment[a],
       activeColor: colorMap[a],
     })));
 
-    const onAdd = () => {
+    const close = () => {
+      emit('close');
+    };
+
+    const add = () => {
       const dateObj = {
         year: date.value.getFullYear(),
         month: date.value.getMonth(),
-        day: date.value.getDay(),
+        day: date.value.getDate(),
       };
 
       emit('add', {
         date: dateObj,
-        type: selectedOperation.value?.value,
-        assessment: assasment.value,
+        type: type.value,
+        assessment: assessment.value,
         comment: comment.value,
         area: area.value,
+        ...(props.operation && { id: props.operation.id }),
       });
     };
 
+    onMounted(() => {
+      if (props.operation) {
+        console.log(props.operation);
+        date.value = getJsDate(props.operation.date);
+        comment.value = props.operation.comment;
+        area.value = props.operation.area;
+        assessment.value = props.operation.assessment;
+        type.value = props.operation.type;
+      }
+    });
+
     return {
+      type,
       date,
       area,
       comment,
-      selectedOperation,
-      assasment,
+      assessment,
       operations,
       assesmentBtns,
-      onClose,
-      onAdd,
+      close,
+      add,
     };
   },
 });
@@ -301,7 +310,7 @@ export default defineComponent({
     line-height: 21px;
     color: var(--dark-gray);
 
-    &::v-deep(input){
+    &::v-deep(input) {
       width: 110px;
       border: none;
       outline: none;
@@ -310,15 +319,9 @@ export default defineComponent({
       line-height: 21px;
       padding: 0;
     }
-    &-placeholder{
-      position: absolute;
-      left: 0;
-      top: 0;
-      pointer-events: none;
-    }
   }
 
-  &__date-icon{
+  &__date-icon {
     grid-area: icon;
     align-self: center;
   }
@@ -326,7 +329,8 @@ export default defineComponent({
   &__area {
     grid-area: a;
   }
-  &__area-input{
+
+  &__area-input {
     width: 100%;
     border: none;
     outline: none;

@@ -7,10 +7,11 @@ import { defineComponent, computed } from 'vue';
 import { Assessment } from '@/models/Operation';
 
 export default defineComponent({
-  name: 'AssessmentBadge',
+  name: 'StatusBadge',
   props: {
     level: {
-      type: Number,
+      type: String,
+      default: '',
     },
   },
   setup(props) {

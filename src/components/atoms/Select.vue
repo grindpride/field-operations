@@ -7,23 +7,22 @@
     :tabindex='0'
   )
     .select__label {{label}}
-    .select__value(:class="{placeholder: !active}") {{active?.label || placeholder}}
+    .select__value(:class="{placeholder: !activeItem}") {{activeItem?.label || placeholder}}
     .select__shevrone(:class='{opened}')
-      include ../assets/shevrone.svg
+      include ../../assets/shevrone.svg
   .select__body(
     v-show='opened'
   )
     .select__option(
       v-for='option of options'
-      @click='onChange(option)'
+      @click='handleChange(option.value)'
       :key='option.value'
-      :active='option.value === active?.value'
     ) {{option.label}}
 </template>
 
 <script lang="ts">
 import {
-  defineComponent, onBeforeUnmount, onMounted, PropType, ref,
+  defineComponent, onBeforeUnmount, onMounted, PropType, ref, computed,
 } from 'vue';
 
 export interface SelectOption<T = unknown> {
@@ -33,7 +32,7 @@ export interface SelectOption<T = unknown> {
 
 export default defineComponent({
   name: 'Select',
-  emits: ['update:active'],
+  emits: ['update:value'],
   props: {
     label: {
       type: String,
@@ -43,22 +42,26 @@ export default defineComponent({
       type: String,
       default: '',
     },
-    active: {
-      type: Object as PropType<SelectOption | null>,
+    value: {
+      type: [String, Number, Boolean],
       default: null,
     },
     options: {
       type: Array as PropType<SelectOption[]>,
-      default: () => [],
+      required: true,
     },
   },
   setup(props, { emit }) {
     const opened = ref(false);
     const select = ref<HTMLDivElement | null>(null);
 
-    const onChange = (item: SelectOption) => {
+    const activeItem = computed(() => props
+      .options
+      .find((item) => item.value === props.value));
+
+    const handleChange = (value: unknown) => {
       opened.value = false;
-      emit('update:active', item);
+      emit('update:value', value);
     };
 
     const openDropdown = () => {
@@ -69,7 +72,7 @@ export default defineComponent({
       opened.value = !opened.value;
     };
 
-    const onClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         select.value
         && opened.value
@@ -82,19 +85,20 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      document.addEventListener('click', onClickOutside, { capture: true });
+      document.addEventListener('click', handleClickOutside, { capture: true });
     });
 
     onBeforeUnmount(() => {
-      document.removeEventListener('click', onClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     });
 
     return {
       opened,
       select,
+      activeItem,
       openDropdown,
       toggleDropdown,
-      onChange,
+      handleChange,
     };
   },
 });
