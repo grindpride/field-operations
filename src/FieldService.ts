@@ -56,7 +56,7 @@ export default class FieldService {
         date: { year: 2021, month: 10, day: 20 },
         area: 48.0,
         comment: 'Нужно обязательно собрать пшеницу',
-        assessment: null,
+        assessment: Assessment.EXCELLENT,
       }),
       new Operation({
         id: 'f112-o6',
@@ -64,7 +64,7 @@ export default class FieldService {
         date: { year: 2021, month: 12, day: 22 },
         area: 48.0,
         comment: 'Поливаем ага, в декабре',
-        assessment: null,
+        assessment: Assessment.BADLY,
       }),
     ];
 

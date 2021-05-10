@@ -3,7 +3,7 @@ aside.sidebar
   button.sidebar__close(@click="close")
     include ../assets/close.svg
   .sidebar__body
-    h2.sidebar__title {{$t('sidebar.addTitle')}}
+    h2.sidebar__title {{operation ? $t('sidebar.editTitle') : $t('sidebar.addTitle')}}
     .field-info
       .field-info__data
         .field-info__square
@@ -44,7 +44,7 @@ aside.sidebar
       .field-assessment__label {{$t('sidebar.assessment')}}
       ButtonGroup(:items="assesmentBtns" v-model:activeItem='assessment')
     .flexspace
-    button.apply-btn(@click="add") {{$t('sidebar.apply')}}
+    button.apply-btn(@click="add") {{operation ? $t('sidebar.edit') : $t('sidebar.apply')}}
 </template>
 
 <script lang="ts">
